@@ -8,7 +8,7 @@ import java.io.InputStream;
 import java.util.Properties;
 
 @Slf4j
-public class PropsUtil {
+public final class PropsUtil {
 
     public static Properties loadProps(String fileName) {
         Properties properties = null;
@@ -49,5 +49,38 @@ public class PropsUtil {
 
         return value;
     }
+
+    /**
+     * get type Integer from value
+     */
+    public static int getInt(Properties properties, String key) {
+        return getInt(properties,key,0);
+    }
+
+    public static int getInt(Properties properties, String key, int value) {
+        if(properties.containsKey(key)) {
+            value = CastUtil.castInt(properties.getProperty(key));
+        }
+
+        return value;
+    }
+
+    /**
+     * get type Boolean from value
+     */
+    public static boolean getBoolean(Properties properties, String key) {
+        return getBoolean(properties,key,false);
+    }
+
+    public static boolean getBoolean(Properties properties, String key, Boolean value) {
+        if(properties.containsKey(key)) {
+            value = CastUtil.castBoolean(properties.getProperty(key));
+        }
+
+        return value;
+    }
+
+
+
 
 }
