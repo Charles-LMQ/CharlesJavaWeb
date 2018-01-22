@@ -15,4 +15,8 @@ public final class StringUtil {
         return !isEmpty(string);
     }
 
+    public static String[] splitString(String origin, String regex) {
+        return origin.split(regex);
+    }
+
 }
