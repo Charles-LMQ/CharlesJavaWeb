@@ -1,9 +1,6 @@
 package cool.charles.framework;
 
-import cool.charles.framework.helper.BeanHelper;
-import cool.charles.framework.helper.ClassHelper;
-import cool.charles.framework.helper.ControllerHelper;
-import cool.charles.framework.helper.IocHelper;
+import cool.charles.framework.helper.*;
 import cool.charles.framework.util.ClassUtil;
 
 public final class HelperLoader {
@@ -11,6 +8,7 @@ public final class HelperLoader {
         Class<?>[] classes = {
             ClassHelper.class,
             BeanHelper.class,
+            AopHelper.class,
             IocHelper.class,
             ControllerHelper.class
         };

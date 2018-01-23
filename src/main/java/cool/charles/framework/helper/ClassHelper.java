@@ -4,6 +4,7 @@ import cool.charles.framework.annotation.Controller;
 import cool.charles.framework.annotation.Service;
 import cool.charles.framework.util.ClassUtil;
 
+import java.lang.annotation.Annotation;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -44,5 +45,27 @@ public final class ClassHelper {
         beanSet.addAll(getServiceClassSet());
         beanSet.addAll(getControllerClassSet());
         return beanSet;
+    }
+
+    public static Set<Class<?>> getClassSetBySuper(Class<?> superClass) {
+        Set<Class<?>> classSet = new HashSet<Class<?>>();
+        for(Class<?> claz : CLASS_SET) {
+            if(superClass.isAssignableFrom(claz) && ! superClass.equals(claz)) {
+                classSet.add(claz);
+            }
+        }
+
+        return classSet;
+    }
+
+    public static Set<Class<?>> getClassSetByAnnotation(Class<? extends Annotation> annotationClass) {
+        Set<Class<?>> classSet = new HashSet<Class<?>>();
+        for(Class<?> claz : CLASS_SET) {
+            if(claz.isAnnotationPresent(annotationClass)) {
+                classSet.add(claz);
+            }
+        }
+
+        return classSet;
     }
 }
