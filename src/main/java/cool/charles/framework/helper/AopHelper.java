@@ -1,9 +1,11 @@
 package cool.charles.framework.helper;
 
 import cool.charles.framework.annotation.Aspect;
+import cool.charles.framework.annotation.Service;
 import cool.charles.framework.proxy.AspectProxy;
 import cool.charles.framework.proxy.Proxy;
 import cool.charles.framework.proxy.ProxyManager;
+import cool.charles.framework.proxy.TransactionProxy;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.annotation.Annotation;
@@ -40,6 +42,12 @@ public final class AopHelper {
 
     private static Map<Class<?>, Set<Class<?>>> createProxyMap() throws Exception {
         Map<Class<?>, Set<Class<?>>> proxyMap = new HashMap<Class<?>, Set<Class<?>>>();
+        addAspectProxy(proxyMap);
+        addTransactionProxy(proxyMap);
+        return proxyMap;
+    }
+
+    private static void addAspectProxy(Map<Class<?>, Set<Class<?>>> proxyMap) throws Exception {
         Set<Class<?>> proxyClassSet = ClassHelper.getClassSetBySuper(AspectProxy.class);
 
         for(Class<?> proxyClass : proxyClassSet) {
@@ -50,7 +58,12 @@ public final class AopHelper {
             }
         }
 
-        return proxyMap;
+    }
+
+    private static void addTransactionProxy(Map<Class<?>, Set<Class<?>>> proxyMap) {
+        Set<Class<?>> serviceClassSet = ClassHelper.getClassSetByAnnotation(Service.class);
+        proxyMap.put(TransactionProxy.class, serviceClassSet);
+
     }
 
     private static Map<Class<?>, List<Proxy>> createTargetMap(Map<Class<?>, Set<Class<?>>> proxyMap) throws Exception {

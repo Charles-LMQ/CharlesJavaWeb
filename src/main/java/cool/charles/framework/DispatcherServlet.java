@@ -72,8 +72,14 @@ public class DispatcherServlet extends HttpServlet {
                 }
 
                 Parameter parameter = new Parameter(paramMap);
+
+                Object result;
                 Method routeMethod = handler.getRouteMethod();
-                Object result = ReflectionUtil.invokeMethod(controllerBean, routeMethod, parameter);
+                if(parameter.isEmpty()) {
+                    result = ReflectionUtil.invokeMethod(controllerBean, routeMethod);
+                } else {
+                    result = ReflectionUtil.invokeMethod(controllerBean, routeMethod, parameter);
+                }
 
                 if(result instanceof View) {
                     View view = (View) result;
