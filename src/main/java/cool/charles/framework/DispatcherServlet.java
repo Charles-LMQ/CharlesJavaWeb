@@ -4,9 +4,7 @@ import cool.charles.framework.bean.Data;
 import cool.charles.framework.bean.Handler;
 import cool.charles.framework.bean.Parameter;
 import cool.charles.framework.bean.View;
-import cool.charles.framework.helper.BeanHelper;
-import cool.charles.framework.helper.ConfigHelper;
-import cool.charles.framework.helper.ControllerHelper;
+import cool.charles.framework.helper.*;
 import cool.charles.framework.util.*;
 
 import javax.servlet.*;
@@ -36,45 +34,40 @@ public class DispatcherServlet extends HttpServlet {
         ServletRegistration defaultServlet = servletContext.getServletRegistration("default");
         defaultServlet.addMapping(ConfigHelper.getAppAssetPath() + "*");
 
+        UploadHelper.init(servletContext);
+
     }
 
     @Override
     public void service(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
 
-        String requestMethod = req.getMethod().toLowerCase();
-        String requestPath = req.getPathInfo();
+        ServletHelper.init(req, res);
 
-        Handler handler = ControllerHelper.getHandler(requestMethod, requestPath);
-        if(handler != null) {
-            Class<?> controllerClaz = handler.getControllerClass();
-            Object controllerBean = BeanHelper.getBean(controllerClaz);
+        try {
 
-            Map<String, Object> paramMap = new HashMap<String, Object>();
-            Enumeration<String> paramNames = req.getParameterNames();
-            while(paramNames.hasMoreElements()) {
-                String paramName = paramNames.nextElement();
-                String paramValue = req.getParameter(paramName);
-                paramMap.put(paramName,paramValue);
+            String requestMethod = req.getMethod().toLowerCase();
+            String requestPath = req.getPathInfo();
+
+            if (requestPath.equals("/favicon.ico")) {
+                return;
             }
 
-            String body = CodecUtil.decodeURL(StreamUtil.getString(req.getInputStream()));
-            if(StringUtil.isNotEmpty(body)) {
-                String[] params = StringUtil.splitString(body, "&");
-                if(ArrayUtil.isNotEmpty(params)) {
-                    for(String param: params) {
-                        String[] array = StringUtil.splitString(param, "=");
-                        if(ArrayUtil.isNotEmpty(array) && array.length == 2) {
-                            String paraName = array[0];
-                            String paraValue = array[1];
-                            paramMap.put(paraName, paraValue);
-                        }
-                    }
-                }
+            Handler handler = ControllerHelper.getHandler(requestMethod, requestPath);
+            if(handler != null) {
+                Class<?> controllerClaz = handler.getControllerClass();
+                Object controllerBean = BeanHelper.getBean(controllerClaz);
 
-                Parameter parameter = new Parameter(paramMap);
+                Parameter parameter;
+
+                if(UploadHelper.isMultipart(req)) {
+                    parameter = UploadHelper.createParameter(req);
+                } else {
+                    parameter = RequestHelper.createParameter(req);
+                }
 
                 Object result;
                 Method routeMethod = handler.getRouteMethod();
+
                 if(parameter.isEmpty()) {
                     result = ReflectionUtil.invokeMethod(controllerBean, routeMethod);
                 } else {
@@ -82,35 +75,45 @@ public class DispatcherServlet extends HttpServlet {
                 }
 
                 if(result instanceof View) {
-                    View view = (View) result;
-                    String path = view.getPath();
-                    if(StringUtil.isNotEmpty(path)) {
-                        if(path.startsWith("/")) {
-                            res.sendRedirect(req.getContextPath() + path);
-                        } else {
-                            Map<String, Object> model = view.getModel();
-                            for(Map.Entry<String, Object>entry : model.entrySet()) {
-                                req.setAttribute(entry.getKey(), entry.getValue());
-                            }
-
-                            req.getRequestDispatcher(ConfigHelper.getAppJspPath() + path).forward(req, res);
-                        }
-                    } else if (result instanceof Data) {
-                        Data data = (Data) result;
-                        Object model = data.getModel();
-                        if(model != null) {
-                            res.setContentType("application/json");
-                            res.setCharacterEncoding("UTF-8");
-                            PrintWriter writer = res.getWriter();
-                            String json = JsonUtil.toJSON(model);
-                            writer.write(json);
-                            writer.flush();
-
-                        }
-                    }
+                    handlerViewResult((View) result, req, res);
+                } else if (result instanceof Data) {
+                    handlerDataResult((Data) result, res);
                 }
+
             }
+
+        } finally {
+            ServletHelper.destory();
         }
 
+    }
+
+
+    private void handlerViewResult(View view, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        String path = view.getPath();
+        if (StringUtil.isNotEmpty(path)) {
+            if (path.startsWith("/")) {
+                response.sendRedirect(request.getContextPath() + path);
+            } else {
+                Map<String, Object> model = view.getModel();
+                for (Map.Entry<String, Object> entry : model.entrySet()) {
+                    request.setAttribute(entry.getKey(), entry.getValue());
+                }
+                request.getRequestDispatcher(ConfigHelper.getAppJspPath() + path).forward(request, response);
+            }
+        }
+    }
+
+    private void handlerDataResult(Data data, HttpServletResponse response) throws IOException {
+        Object model = data.getModel();
+        if (model != null) {
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            PrintWriter writer = response.getWriter();
+            String json = JsonUtil.toJSON(model);
+            writer.write(json);
+            writer.flush();
+            writer.close();
+        }
     }
 }

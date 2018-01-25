@@ -12,4 +12,6 @@ public interface ConfigConstant {
     String APP_BASE_PACKAGE = "charles.framework.app.base_package";
     String APP_JSP_PATH = "charles.framework.app.jsp_path";
     String APP_ASSET_PATH = "charles.framework.app.asset_path";
+
+    String APP_UPLOAD_LIMIT = "charles.framework.app.upload_limit";
 }
